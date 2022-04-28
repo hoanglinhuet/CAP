@@ -37,7 +37,7 @@ namespace DotNetCore.CAP
         public const string DefaultExchangeName = "cap.default.router";
 
         /// <summary> The topic exchange type. </summary>
-        public const string ExchangeType = "topic";
+        public const string ExchangeType = "direct";
 
         /// <summary>
         /// The host to connect to.

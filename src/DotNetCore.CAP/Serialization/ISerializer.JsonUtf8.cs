@@ -2,6 +2,8 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System;
+using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using DotNetCore.CAP.Messages;
@@ -29,8 +31,12 @@ namespace DotNetCore.CAP.Serialization
             {
                 return Task.FromResult(new TransportMessage(message.Headers, null));
             }
-
-            var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(message.Value, _jsonSerializerOptions);
+            string msgValue = string.Empty;
+            if (message.Value.GetType() == typeof(string))
+                msgValue = message.Value.ToString();
+            else
+                msgValue = SerializeObj(message.Value);
+            var jsonBytes = Encoding.UTF8.GetBytes(msgValue);
             return Task.FromResult(new TransportMessage(message.Headers, jsonBytes));
         }
 
@@ -46,9 +52,22 @@ namespace DotNetCore.CAP.Serialization
             return Task.FromResult(new Message(transportMessage.Headers, obj));
         }
 
+        private string SerializeObj(object obj)
+        {
+            StringBuilder sb = new StringBuilder();
+            using (StringWriter sw = new StringWriter(sb))
+            using (Newtonsoft.Json.JsonTextWriter writer = new Newtonsoft.Json.JsonTextWriter(sw))
+            {
+                writer.QuoteChar = '\'';
+                Newtonsoft.Json.JsonSerializer ser = new Newtonsoft.Json.JsonSerializer();
+                ser.Serialize(writer, obj);
+            }
+            return sb.ToString();
+        }
+
         public string Serialize(Message message)
         {
-            return JsonSerializer.Serialize(message, _jsonSerializerOptions);
+            return SerializeObj(message);
         }
 
         public Message? Deserialize(string json)
